@@ -12,10 +12,12 @@ class LSTMfeatures(BaseFeaturesExtractor):
         self.num_layers = 6
         self.lstm = nn.LSTM(observation_space.shape[1], self.hidden_size, self.num_layers, batch_first=True)
         self.fc = nn.Linear(self.hidden_size, features_dim)
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
     def forward(self, observations: torch.Tensor) -> torch.Tensor:
-        h0 = torch.zeros(self.num_layers, observations.size(0), self.hidden_size).to('cuda')
-        c0 = torch.zeros(self.num_layers, observations.size(0), self.hidden_size).to('cuda')
+        
+        h0 = torch.zeros(self.num_layers, observations.size(0), self.hidden_size).to(self.device)
+        c0 = torch.zeros(self.num_layers, observations.size(0), self.hidden_size).to(self.device)
         out, hidden = self.lstm(observations, (h0, c0))
 
         out = self.fc(out[:, -1, :])
