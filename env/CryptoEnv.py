@@ -16,7 +16,7 @@ class CustomEnv(gym.Env):
         self.action_space = spaces.Discrete(3) 
         
         # open, high, low, close, volume, canbuy, cansell
-        self.observation_space = spaces.Box(low=0.0, high=1.0,shape=(self.timesteps, 7), dtype=np.float32)
+        self.observation_space = spaces.Box(low=0.0, high=1.0, shape=(self.timesteps, 7), dtype=np.float32)
 
         self.buffer = deque(maxlen=self.timesteps)
         self.orders = deque()
@@ -36,7 +36,7 @@ class CustomEnv(gym.Env):
     def calcTotalBudget(self, currprice):
         total = 0
         for order in self.orders:
-            total += order['size']*currprice
+            total += order['size'] * currprice
         return total + self.budget
 
     def buffer2obs(self):
@@ -56,7 +56,7 @@ class CustomEnv(gym.Env):
         currprice = curriter[3]
         totalBudget = self.calcTotalBudget(currprice)
 
-        orderprice = totalBudget*self.ordersize
+        orderprice = totalBudget * self.ordersize
         taxprice = orderprice * 0.001
 
         taxorderprice = orderprice - taxprice
@@ -64,7 +64,6 @@ class CustomEnv(gym.Env):
         reward = 0
         if action == 0:
             # buy
-
             if self.budget > orderprice:
                 # can buy
                 order = {
@@ -93,7 +92,7 @@ class CustomEnv(gym.Env):
 
                 sellprice = size*currprice*(1-0.001)
 
-                reward += (sellprice - price)/(self.currtime-buytime)*10
+                reward += (sellprice - price) / (self.currtime-buytime) * 10
                 self.selltimes += (sellprice - price)
 
                 self.budget += sellprice
@@ -131,4 +130,5 @@ class CustomEnv(gym.Env):
         observation, reward, done, info = self.step(2)
         for _ in range(self.timesteps):
             observation, reward, done, info = self.step(2)
+            
         return observation
