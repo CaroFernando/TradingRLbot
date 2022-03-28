@@ -6,13 +6,11 @@ from collections import deque
 import os
 
 class CustomEnv(gym.Env):
-    """Custom Environment that follows gym interface"""
-    metadata = {'render.modes': ['human']}
-
-    def __init__(self, timesteps, ordersize = 0.3):
+    def __init__(self, timesteps, pairName, ordersize = 0.3):
         super(CustomEnv, self).__init__()
         self.timesteps = timesteps
         self.ordersize = ordersize
+        self.pairName = pairName
 
         # buy, sell, doNothing
         self.action_space = spaces.Discrete(3) 
@@ -24,7 +22,7 @@ class CustomEnv(gym.Env):
         self.orders = deque()
 
         dirname = os.path.dirname(__file__)
-        filename = os.path.join(dirname, 'data/ETHUSDT.csv')
+        filename = os.path.join(dirname, f'data/{self.pairName}.csv')
 
         self.data = pd.read_csv(filename)
         self.N = len(self.data)
@@ -121,8 +119,10 @@ class CustomEnv(gym.Env):
         self.ind = 0
         self.buffer.clear()
         self.orders.clear()
+
         self.nobuys = 0
         self.nosells = 0
+        
         self.currtime = 0
         self.selltimes = 0
 
