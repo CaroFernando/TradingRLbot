@@ -14,7 +14,6 @@ class LSTMfeatures(BaseFeaturesExtractor):
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
     def forward(self, observations: torch.Tensor) -> torch.Tensor:
-        
         h0 = torch.zeros(self.num_layers, observations.size(0), self.hidden_size).to(self.device)
         c0 = torch.zeros(self.num_layers, observations.size(0), self.hidden_size).to(self.device)
         out, hidden = self.lstm(observations, (h0, c0))

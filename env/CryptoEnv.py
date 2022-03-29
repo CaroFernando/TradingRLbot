@@ -73,14 +73,11 @@ class CustomEnv(gym.Env):
                 }
                 self.orders.append(order)
                 self.budget -= orderprice
-                reward += 0.1
                 self.nobuys += 1
-            
+                reward += 0.1
             else: reward -= 0.1
-            
         elif action == 1:
             # sell
-
             if len(self.orders) > 0:
                 # can sell
                 order = self.orders[0]
@@ -97,9 +94,7 @@ class CustomEnv(gym.Env):
 
                 self.budget += sellprice
                 self.nosells += 1
-            
             else: reward -= 0.1
-        
         else: reward += 0.01
 
         canbuysell = np.array([1 if self.budget > orderprice else 0, 1 if len(self.orders) > 0 else 0])
@@ -130,5 +125,5 @@ class CustomEnv(gym.Env):
         observation, reward, done, info = self.step(2)
         for _ in range(self.timesteps):
             observation, reward, done, info = self.step(2)
-            
+
         return observation
