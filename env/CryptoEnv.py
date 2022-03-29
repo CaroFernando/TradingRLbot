@@ -87,7 +87,7 @@ class CustomEnv(gym.Env):
                 price = order['price']
                 buytime = order['time']
 
-                sellprice = size*currprice*(1-0.001)
+                sellprice = size * currprice * (1-0.001)
 
                 reward += (sellprice - price) / (self.currtime-buytime) * 10
                 self.selltimes += (sellprice - price)
