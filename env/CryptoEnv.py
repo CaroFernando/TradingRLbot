@@ -4,13 +4,16 @@ import pandas as pd
 import numpy as np
 from collections import deque
 import os
+import matplotlib.pyplot as plt
 
 class CustomEnv(gym.Env):
-    def __init__(self, timesteps, pairName, ordersize = 0.3):
+    def __init__(self, timesteps, pairName, ordersize = 0.3, debug = False):
         super(CustomEnv, self).__init__()
         self.timesteps = timesteps
         self.ordersize = ordersize
         self.pairName = pairName
+
+        self.debug = debug
 
         # buy, sell, doNothing
         self.action_space = spaces.Discrete(3) 
@@ -32,6 +35,13 @@ class CustomEnv(gym.Env):
         self.nosells = 0
         self.currtime = 0
         self.selltimes = 0
+
+        self.budgethist = []
+        self.imgind = 0
+
+        self.done = False
+
+        self.ind = 0
 
     def calcTotalBudget(self, currprice):
         total = 0
@@ -55,6 +65,7 @@ class CustomEnv(gym.Env):
         curriter = np.array(self.data.iloc[self.ind][0:5])
         currprice = curriter[3]
         totalBudget = self.calcTotalBudget(currprice)
+        self.budgethist.append(totalBudget)
 
         orderprice = totalBudget * self.ordersize
         taxprice = orderprice * 0.001
@@ -67,10 +78,12 @@ class CustomEnv(gym.Env):
             if self.budget > orderprice:
                 # can buy
                 order = {
-                    'size': currprice / taxorderprice,
+                    'size': taxorderprice / currprice,
                     'price': taxorderprice,
                     'time': self.currtime
                 }
+                if self.debug: print(f"BUY {order['size']} {order['price']} {order['time']}")
+
                 self.orders.append(order)
                 self.budget -= orderprice
                 self.nobuys += 1
@@ -89,13 +102,15 @@ class CustomEnv(gym.Env):
 
                 sellprice = size * currprice * (1-0.001)
 
-                reward += (sellprice - price) / (self.currtime-buytime) * 10
-                self.selltimes += (sellprice - price)
+                reward += (sellprice - price) if (sellprice - price) >= 0 else (sellprice - price) * 0.1
+
+                if self.debug: print(f"SELL {sellprice} iniPrice: {price} profit: {sellprice-price} time: {self.currtime-buytime}")
+                self.selltimes += (self.currtime - buytime)
 
                 self.budget += sellprice
                 self.nosells += 1
             else: reward -= 0.1
-        else: reward += 0.01
+        else: reward -= 0.01
 
         canbuysell = np.array([1 if self.budget > orderprice else 0, 1 if len(self.orders) > 0 else 0])
 
@@ -105,14 +120,22 @@ class CustomEnv(gym.Env):
         observation = self.buffer2obs()
         self.ind += 1
         self.currtime += 1
-        return observation, reward, self.ind == self.N, {}
+        self.done = self.ind == self.N or totalBudget <= 60
+        return observation, reward, self.done, {}
 
     def reset(self):
-        print(f"Budget: {self.calcTotalBudget(self.data.iloc[self.N-1][3])} buys: {self.nobuys} sells: {self.nosells} avgselltimes: {self.selltimes/(max(self.nosells, 1))}")
+        print(f"Budget: {self.calcTotalBudget(self.data.iloc[self.ind-1][3])} buys: {self.nobuys} sells: {self.nosells} avgselltimes: {self.selltimes/(max(self.nosells, 1))}")
+        plt.plot(self.budgethist)
+        plt.savefig(f'{self.pairName}_{self.imgind}.png')
+        plt.clf()
+        self.imgind += 1
 
         self.ind = 0
         self.buffer.clear()
         self.orders.clear()
+        self.budgethist.clear()
+
+        self.done = False
 
         self.nobuys = 0
         self.nosells = 0
